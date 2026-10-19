@@ -22,10 +22,17 @@ isi `Program.cs` baris demi baris (termasuk lifetime/scope tiap service), dan al
 12. [Glosarium Nama Folder dan File](#12-glosarium-nama-folder-dan-file)
 13. [Cara Menambah Fitur Baru](#13-cara-menambah-fitur-baru)
 14. [Catatan dan Keterbatasan Saat Ini](#14-catatan-dan-keterbatasan-saat-ini)
+15. [File di Root Project dan Konfigurasi](#15-file-di-root-project-dan-konfigurasi) — `Program.cs`, `.csproj`, `appsettings`, user-secrets, `launchSettings`, `.gitignore`
+16. [Mapping: Apa Itu dan Kenapa Dipakai](#16-mapping-apa-itu-dan-kenapa-dipakai)
+17. [Pewarisan, Interface, dan Dependency Injection](#17-pewarisan-interface-dan-dependency-injection) — arti `:` pada class, dan semua tempat DI dipakai
 
 ---
 
 ## 1. Gambaran Besar
+
+> **Belum familiar dengan istilahnya?** Baca dulu: [bagian 15](#15-file-di-root-project-dan-konfigurasi) (arti `Program.cs`,
+> `.csproj`, `appsettings`, user-secrets, dll.), [bagian 16](#16-mapping-apa-itu-dan-kenapa-dipakai) (apa itu *mapping*), dan
+> [bagian 17](#17-pewarisan-interface-dan-dependency-injection) (arti `class A : B` dan *Dependency Injection*).
 
 Aplikasi memakai **arsitektur berlapis** dengan aturan dependensi satu arah:
 
@@ -683,6 +690,12 @@ Cara test membuat `HttpContext` untuk `SignInAsync`: `DefaultHttpContext` dengan
 | **wwwroot** | "Web root": satu-satunya folder yang boleh diunduh browser langsung. |
 | **Properties** | Berisi `launchSettings.json` (profil jalankan lokal). |
 | **tests** | Project pengujian terpisah. |
+| **Mapping** | Mengubah data dari satu bentuk kelas ke bentuk lain (mis. `RegisterDto` → `User`). Lihat [bagian 16](#16-mapping-apa-itu-dan-kenapa-dipakai). |
+| **Dependency Injection (DI)** | Kelas meminta dependensinya lewat constructor; container yang membuat dan menyuntikkannya. Lihat [bagian 17](#17-pewarisan-interface-dan-dependency-injection). |
+| **Inheritance / `class A : B`** | Pewarisan: `A` mewarisi isi `B` (kelas), atau menepati kontrak `B` (interface). Lihat [bagian 17.1](#171-semua-pemakaian--di-project-ini). |
+| **Scoped / Singleton / Transient** | Lifetime objek di DI container. Lihat [bagian 5.0](#50-konsep-lifetime-maksud-scoped). |
+| **Environment** | Mode aplikasi (`Development`/`Production`) dari `ASPNETCORE_ENVIRONMENT`. Lihat [bagian 15.5](#155-appsettingsdevelopmentjson). |
+| **Top-level statements** | Gaya penulisan `Program.cs` tanpa `class`/`Main`. Lihat [bagian 15.2](#152-programcs). |
 | Awalan **`I`** (`IAuthService`) | Konvensi C# untuk interface. |
 | Awalan **`_`** (`_Layout`, `_FlashMessages`) | View yang bukan halaman sendiri: layout/partial/pengaturan. |
 | Akhiran **`.cshtml.css`** | Scoped CSS milik view dengan nama yang sama. |
@@ -722,3 +735,418 @@ Aturan penaruhan class: *data form* → `DTOs`, *aturan bisnis* → `Services`, 
 - **Halaman Privacy** masih berisi teks bawaan template.
 - **Panel Admin** masih placeholder (manajemen user di luar scope MVP).
 - Fitur v2 di PRD (ganti password saat login, edit profil, verifikasi email, 2FA, login sosial, audit log) belum dikerjakan.
+
+---
+
+## 15. File di Root Project dan Konfigurasi
+
+Bagian ini menjelaskan file yang ada di luar folder kode (Controllers, Services, dst.): apa isinya, siapa yang membacanya, dan kapan berubah.
+
+### 15.1 Ringkasan cepat
+
+| File / folder | Fungsi singkat | Dibaca oleh | Di-commit ke git? |
+|---|---|---|---|
+| `Program.cs` | Titik masuk aplikasi (daftar service + susun pipeline) | Compiler → runtime | Ya |
+| `NetMvcAuthV2.csproj` | Definisi project: framework, paket NuGet, pengaturan compiler | `dotnet build/restore` | Ya |
+| `appsettings.json` | Konfigurasi umum (non-rahasia) | Sistem konfigurasi ASP.NET Core | Ya |
+| `appsettings.Development.json` | Konfigurasi tambahan khusus environment Development | Sistem konfigurasi | Ya |
+| `secrets.json` (user-secrets) | Konfigurasi **rahasia** lokal (password admin, SMTP) | Sistem konfigurasi (Development saja) | **Tidak** (di luar repo) |
+| `Properties/launchSettings.json` | Profil menjalankan app lokal (URL, environment) | `dotnet run` / Visual Studio | Ya |
+| `.gitignore` | Daftar file yang tidak dilacak git | git | Ya |
+| `prd.md` / `README.md` / `FLOW.md` | Dokumentasi | Manusia | Ya |
+| `Migrations/` | Riwayat skema database | `dotnet ef` | Ya |
+| `bin/`, `obj/` | Hasil build | build system | Tidak |
+| `tests/` | Project unit test | `dotnet test` | Ya |
+
+### 15.2 `Program.cs`
+
+**Apa:** file C# pertama yang dijalankan. Ditulis dengan *top-level statements* (fitur C# 9+): tidak ada `class Program` atau
+`static void Main`, compiler membuatkannya otomatis.
+
+**Tugasnya hanya tiga:**
+
+1. **Mendaftarkan service** ke *DI container* (`builder.Services.Add...`) — "daftar kelas apa saja yang boleh diminta aplikasi".
+2. **Membangun app + seeding** (`builder.Build()`, `DbSeeder`).
+3. **Menyusun pipeline middleware** (`app.Use...`, `app.Map...`) — "urutan pemeriksaan yang dilewati setiap request".
+
+Penjelasan baris demi baris, lifetime tiap service, dan urutan middleware ada di [bagian 5](#5-programcs--penjelasan-penuh).
+Hubungan dengan pewarisan/DI ada di [bagian 17](#17-pewarisan-interface-dan-dependency-injection).
+
+### 15.3 `NetMvcAuthV2.csproj`
+
+File XML yang memberi tahu `dotnet` cara membangun project. Tidak berisi logika aplikasi.
+
+```xml
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>fb4a5fc5-02b0-4123-82cd-70777da69f21</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="tests\**" />
+    <Content Remove="tests\**" />
+    <EmbeddedResource Remove="tests\**" />
+    <None Remove="tests\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MailKit" Version="4.*" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.*">...</PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.*" />
+  </ItemGroup>
+</Project>
+```
+
+| Elemen | Arti |
+|---|---|
+| `Sdk="Microsoft.NET.Sdk.Web"` | Memakai SDK **Web**: otomatis menyertakan ASP.NET Core, kompilasi Razor (`.cshtml`), aset statis `wwwroot`, dan `launchSettings`. SDK biasa (`Microsoft.NET.Sdk`) tidak punya ini. |
+| `TargetFramework` = `net10.0` | Aplikasi ditargetkan ke .NET 10. |
+| `Nullable` = `enable` | Compiler memeriksa nilai `null`. Itulah sebabnya ada tanda `?` (`string?`) dan inisialisasi `= string.Empty`. |
+| `ImplicitUsings` = `enable` | Sejumlah `using` ditambahkan otomatis (`System`, `System.Linq`, `System.Threading.Tasks`, `Microsoft.AspNetCore.Builder`, `Microsoft.AspNetCore.Http`, `Microsoft.Extensions.Configuration`, `Microsoft.Extensions.DependencyInjection`, `Microsoft.Extensions.Logging`, dll.). Karena itu `ILogger`, `IConfiguration`, `HttpContext` bisa dipakai tanpa `using` di tiap file. |
+| `UserSecretsId` | ID yang menentukan folder penyimpanan user-secrets milik project ini (lihat 15.6). |
+| `Compile Remove="tests\**"` (dan 3 baris sejenis) | Folder `tests/` ada di dalam folder project. Tanpa baris ini, SDK ikut meng-compile file test ke dalam aplikasi utama. |
+| `PackageReference` | Paket NuGet yang dipakai. `10.0.*` = ambil patch terbaru 10.0. Paket `...Design` ditandai build-time saja (tidak ikut diteruskan ke project lain). |
+
+### 15.4 `appsettings.json`
+
+File konfigurasi JSON yang dibaca saat startup. **Bukan tempat secret.** Isinya sekarang:
+
+```json
+{
+  "Logging": { "LogLevel": { "Default": "Information", "Microsoft.AspNetCore": "Warning" } },
+  "ConnectionStrings": { "DefaultConnection": "Server=.\\SQLEXPRESS;Database=db_net_mvc_auth_v2;Trusted_Connection=True;TrustServerCertificate=True;" },
+  "Smtp": { "Host": "", "Port": 587, "FromAddress": "no-reply@netmvcauthv2.com", "FromName": "NetMvcAuthV2" },
+  "AllowedHosts": "*"
+}
+```
+
+| Bagian | Arti | Dipakai oleh |
+|---|---|---|
+| `Logging:LogLevel:Default` = `Information` | Level log minimum untuk semua kategori (Trace < Debug < Information < Warning < Error < Critical) | Sistem logging (`ILogger`) |
+| `Logging:LogLevel:Microsoft.AspNetCore` = `Warning` | Log framework ASP.NET Core hanya tampil kalau Warning ke atas (mengurangi kebisingan) | Sistem logging |
+| `ConnectionStrings:DefaultConnection` | Alamat database. `Server=.\SQLEXPRESS` = SQL Server Express di komputer ini (`.` = lokal); `Database=` nama database; `Trusted_Connection=True` = login pakai akun Windows (tanpa password); `TrustServerCertificate=True` = percaya sertifikat SSL server lokal | `AddDbContext` di `Program.cs` lewat `GetConnectionString("DefaultConnection")` |
+| `Smtp:*` | Host, port, alamat/nama pengirim email. `Host` sengaja kosong karena di Development email tidak dikirim sungguhan | `Configure<SmtpSettings>(GetSection("Smtp"))` → `SmtpEmailSender` |
+| `AllowedHosts` = `*` | Host header yang diterima. `*` = semua (ganti dengan domain asli di production) | Middleware host filtering bawaan |
+
+**Cara membaca di kode:** struktur JSON bertingkat dipetakan dengan tanda titik dua `:` —
+`Smtp:Host`, `ConnectionStrings:DefaultConnection`, `Seed:AdminEmail`. Contoh di project:
+
+```csharp
+builder.Configuration.GetConnectionString("DefaultConnection")   // Program.cs
+builder.Configuration.GetSection("Smtp")                         // Program.cs
+config["Seed:AdminEmail"]                                        // DbSeeder.cs
+```
+
+JSON tidak boleh berisi komentar.
+
+### 15.5 `appsettings.Development.json`
+
+Konfigurasi **tambahan** yang hanya dimuat saat environment = `Development`. Nilainya **menimpa** kunci yang sama di `appsettings.json`
+(kunci lain tetap dipakai). Sekarang isinya hanya pengaturan `Logging` yang sama, jadi praktis tidak mengubah apa-apa; tempatnya
+untuk nilai khusus pengembangan (mis. log lebih detail). Pola nama: `appsettings.{Environment}.json`
+(`appsettings.Production.json` dst.).
+
+**Environment** ditentukan variabel `ASPNETCORE_ENVIRONMENT`. Di lokal nilainya diset oleh `launchSettings.json` menjadi `Development`;
+jika tidak diset sama sekali, ASP.NET Core menganggapnya `Production`. Efek `IsDevelopment()` di project ini:
+
+| Efek | Lokasi |
+|---|---|
+| `appsettings.Development.json` dan user-secrets ikut dimuat | sistem konfigurasi |
+| `FakeEmailSender` dipakai (email ditulis ke log) | `Program.cs` |
+| `DbSeeder` membuat akun Admin saat startup | `Program.cs` |
+| `UseExceptionHandler` dan `UseHsts` **tidak** dipasang; halaman error developer ditampilkan | `Program.cs` |
+
+### 15.6 User-secrets (`secrets.json`)
+
+Penyimpanan konfigurasi rahasia **di luar repo**, khusus mesin developer:
+
+```text
+%APPDATA%\Microsoft\UserSecrets\fb4a5fc5-02b0-4123-82cd-70777da69f21\secrets.json
+```
+
+Folder ditentukan `UserSecretsId` di `.csproj`. Hanya dibaca saat environment Development. Perintah:
+
+```bash
+dotnet user-secrets set "Seed:AdminPassword" "..."   # tambah/ubah
+dotnet user-secrets list                              # lihat semua
+dotnet user-secrets remove "Seed:AdminPassword"       # hapus satu
+dotnet user-secrets clear                             # hapus semua
+```
+
+Kunci yang dipakai: `Seed:AdminEmail`, `Seed:AdminPassword`, `Seed:AdminName` (dibaca `DbSeeder`) dan `Smtp:User`, `Smtp:Password`
+(dibaca `SmtpEmailSender`). Di production gunakan **environment variable**; `:` ditulis `__`, contoh `Smtp__Password`.
+
+**Urutan prioritas (yang belakangan menang):** `appsettings.json` → `appsettings.{Env}.json` → user-secrets → environment variable → argumen command line.
+
+### 15.7 `Properties/launchSettings.json`
+
+Hanya dipakai saat menjalankan dari mesin developer (`dotnet run`, Visual Studio, Rider). **Tidak ikut saat deploy.**
+
+| Profil | URL | Environment |
+|---|---|---|
+| `http` | `http://localhost:5050` | Development |
+| `https` | `https://localhost:7038` dan `http://localhost:5050` | Development |
+
+`launchBrowser: true` membuka browser otomatis. Pilih profil dengan `dotnet run --launch-profile https`.
+
+### 15.8 `.gitignore`
+
+Menentukan file yang **tidak** dimasukkan ke git: `bin/` `obj/` (hasil build), `.vs/` `.idea/` `.vscode/` (pengaturan IDE),
+`TestResults/` dan coverage, `*.nupkg`, log (`*.log`), database lokal (`*.mdf`, `*.ldf`, `*.db`, `*.sqlite`),
+file rahasia (`secrets.json`, `.env`, `.env.*`, `*.pfx`, `appsettings.Local.json`), file OS (`.DS_Store`, `Thumbs.db`),
+dan `.claude/settings.local.json`.
+
+### 15.9 Dokumentasi
+
+| File | Isi |
+|---|---|
+| `prd.md` | Spesifikasi produk: apa yang harus dibangun, acceptance criteria, keamanan |
+| `README.md` | Cara install, menjalankan, library, dan konfigurasi |
+| `FLOW.md` | (dokumen ini) cara kerja kode dari file ke file |
+
+### 15.10 Folder hasil build dan lainnya
+
+- `bin/` — hasil kompilasi (`.dll`, `.exe`). Aplikasi yang sedang berjalan mengunci `NetMvcAuthV2.exe` di sini, sehingga `dotnet build` gagal bila app masih menyala.
+- `obj/` — file perantara build (termasuk hasil kompilasi Razor dan `project.assets.json` dari `dotnet restore`).
+- `Migrations/` — lihat [bagian 8](#8-database-dan-migration).
+- `tests/NetMvcAuthV2.Tests/` — project terpisah dengan `.csproj` sendiri yang mereferensi project utama.
+- Tidak ada file `.sln` (solution); project dijalankan langsung lewat `.csproj`.
+
+---
+
+## 16. Mapping: Apa Itu dan Kenapa Dipakai
+
+**Mapping = proses mengubah data dari satu bentuk (kelas) ke bentuk lain.** Di project ini bentuk yang berbeda itu sengaja dipisah
+karena tiap bentuk punya tujuan sendiri:
+
+| Bentuk | Kelas | Tujuan |
+|---|---|---|
+| Data dari form | `RegisterDto` | Hanya field yang boleh diisi pengguna + aturan validasi |
+| Data di database | `User` | Semua kolom tabel, termasuk yang rahasia/internal (`PasswordHash`, `Role`, `SecurityStamp`, ...) |
+| Data identitas sesi | `ClaimsPrincipal` | Informasi "siapa saya" yang disimpan di cookie |
+
+Karena bentuknya berbeda, perlu "jembatan" yang mengubah satu ke yang lain. Jembatan itulah mapping.
+
+### 16.1 Kenapa tidak langsung pakai `User` di form?
+
+Kalau action menerima `User` langsung:
+
+```csharp
+public async Task<IActionResult> Register(User user)   // BAHAYA
+```
+
+penyerang bisa menambahkan field `Role=1` ke body request, dan MVC dengan senang hati mengisi `user.Role = Admin`
+(**over-posting / privilege escalation**). Dengan DTO:
+
+```csharp
+public async Task<IActionResult> Register(RegisterDto dto)   // aman
+```
+
+`RegisterDto` tidak punya properti `Role`, jadi field itu diabaikan. Lalu mapping `dto.ToUser()` yang **mengunci** `Role = UserRole.User`.
+
+### 16.2 Mapping yang ditulis sendiri: `Mappings/UserMappings.cs`
+
+| Mapping | Dari → Ke | Dipanggil dari | Yang dilakukan |
+|---|---|---|---|
+| `dto.ToUser()` | `RegisterDto` → `User` | `AuthService.RegisterAsync` | Normalisasi email (trim + huruf kecil), trim nama, **role dikunci `User`**. `PasswordHash` tidak diisi (dilakukan service). |
+| `user.ToPrincipal(scheme)` | `User` → `ClaimsPrincipal` | `AuthService.LoginAsync` | Membuat claim `NameIdentifier`, `Email`, `Name`, `Role`, `security_stamp` untuk dimasukkan ke cookie. |
+| `NormalizeEmail(email)` | `string` → `string` | `AuthService`, `DbSeeder`, (lewat `ToUser`) | Satu-satunya tempat aturan normalisasi email. |
+
+**Cara kerja `this` pada method mapping:**
+
+```csharp
+public static User ToUser(this RegisterDto dto) => new() { ... };
+```
+
+Kata `this` pada parameter pertama membuat method ini **extension method**: bisa dipanggil seperti method milik objek
+(`dto.ToUser()`) walau ditulis di kelas lain. Syaratnya kelasnya `static`. Itu sebabnya `UserMappings` berupa `static class`.
+
+### 16.3 Mapping lain yang terjadi otomatis (jangan tertukar)
+
+Kata "mapping" dipakai untuk beberapa hal berbeda di dunia .NET:
+
+| Jenis | Siapa yang melakukan | Contoh di project |
+|---|---|---|
+| **Model binding** | ASP.NET Core MVC | Isi form HTTP → objek `LoginDto` sebelum action dipanggil |
+| **Object mapping (manual)** | Kode kita | `UserMappings.cs` (bagian 16.2) |
+| **ORM mapping** | Entity Framework Core | Kelas `User` ⇄ tabel `Users`; diatur lewat `UserConfiguration.cs` (Fluent API) dan migration |
+| **Route mapping** | Routing ASP.NET Core | URL `/Account/Login` → `AccountController.Login`; `MapControllerRoute` di `Program.cs` |
+| **Options binding** | Sistem konfigurasi | Section `"Smtp"` di JSON → objek `SmtpSettings` (`Configure<SmtpSettings>`) |
+
+Project ini **tidak memakai library mapping** seperti AutoMapper/Mapster. Ukurannya kecil, jadi ditulis manual agar jelas dan mudah diuji
+(`UserMappingsTests` menguji hasilnya langsung).
+
+---
+
+## 17. Pewarisan, Interface, dan Dependency Injection
+
+Kata yang Anda cari kemungkinan salah satu (atau gabungan) dari ini:
+
+| Istilah | Sintaks | Arti singkat |
+|---|---|---|
+| **Inheritance (pewarisan)** | `class Anak : Induk` | Kelas anak **mewarisi** semua anggota kelas induk, jadi bisa langsung memakainya |
+| **Implementasi interface** | `class Kelas : IKontrak` | Kelas **berjanji** menyediakan semua method yang ada di interface |
+| **Polymorphism** | memanggil lewat tipe induk/interface | Satu tipe (mis. `IEmailSender`) bisa berisi objek berbeda (`FakeEmailSender` atau `SmtpEmailSender`) |
+| **Dependency Injection (DI)** | parameter constructor + `AddScoped` | Kelas **meminta** objek yang dibutuhkannya, bukan membuatnya sendiri dengan `new` |
+
+Semua "pewarisan" dan "implementasi interface" memakai tanda **titik dua `:`**. Di C#, urutannya:
+**kelas induk dulu (maksimal satu), baru interface (boleh banyak)**, dipisah koma.
+
+### 17.1 Semua pemakaian `:` di project ini
+
+| Deklarasi | Jenis | Apa yang didapat |
+|---|---|---|
+| `AccountController(...) : Controller` | Pewarisan kelas | Mewarisi `Controller` (MVC): method `View()`, `RedirectToAction()`, `LocalRedirect()`, `Url`, `User`, `TempData`, `ModelState`, `Request`, `Response`, `HttpContext`. Tanpa `: Controller`, semua itu tidak ada dan kelas tidak dikenali sebagai controller. |
+| `AdminController : Controller` | Pewarisan kelas | Sama seperti di atas |
+| `HomeController : Controller` | Pewarisan kelas | Sama seperti di atas |
+| `AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)` | Pewarisan kelas | Mewarisi `DbContext` (EF Core): `Set<T>()`, `SaveChangesAsync()`, `OnModelCreating`. `DbContext(options)` meneruskan `options` ke constructor induk. |
+| `Repository<T>(AppDbContext context) : IRepository<T> where T : class` | Implementasi interface | Wajib punya `GetByIdAsync`, `GetAllAsync`, `AddAsync`, `Update`, `Remove`, `SaveChangesAsync`. (`where T : class` **bukan** pewarisan — itu *batasan generik*: `T` harus tipe kelas.) |
+| `UserRepository(AppDbContext context) : Repository<User>(context), IUserRepository` | Pewarisan **dan** interface | Mewarisi `Repository<User>` (semua CRUD gratis, plus `Set` dan `Context`) **dan** menepati `IUserRepository` (menambah 3 method: `GetByEmailAsync`, `GetByResetTokenHashAsync`, `EmailExistsAsync`). `Repository<User>(context)` = meneruskan `context` ke constructor induk. |
+| `IUserRepository : IRepository<User>` | Interface mewarisi interface | `IUserRepository` otomatis berisi semua anggota `IRepository<User>` + 3 method tambahan |
+| `AuthService(...) : IAuthService` | Implementasi interface | Wajib menyediakan 5 method auth |
+| `SmtpEmailSender(IOptions<SmtpSettings> options) : IEmailSender` | Implementasi interface | Wajib punya `SendAsync` |
+| `FakeEmailSender(ILogger<FakeEmailSender> logger) : IEmailSender` | Implementasi interface | Wajib punya `SendAsync` |
+| `UserConfiguration : IEntityTypeConfiguration<User>` | Implementasi interface | Wajib punya `Configure(EntityTypeBuilder<User>)`; EF menemukannya otomatis |
+| `AddUser : Migration` (di `Migrations/`) | Pewarisan kelas | Dibuat oleh `dotnet ef`; wajib `Up` dan `Down` |
+| `AppDbContextModelSnapshot : ModelSnapshot` | Pewarisan kelas | Dibuat oleh `dotnet ef` |
+
+Kelas yang **tidak** mewarisi apa pun (kelas biasa): `User`, semua `*Dto`, `SmtpSettings`, `ErrorViewModel`.
+Kelas `static` (`UserMappings`, `DbSeeder`, `SecurityStampCookieValidator`, `Roles`, dst.) memang tidak bisa diwarisi atau diinstansiasi.
+
+**Contoh pewarisan di `UserRepository`:** kelasnya hampir kosong, tetapi bisa dipakai penuh karena mewarisi dari `Repository<User>`.
+
+```text
+IRepository<T>  (interface: kontrak CRUD)
+     ▲  diimplementasi oleh
+Repository<T>   (kelas: isi CRUD generik)
+     ▲  diwarisi oleh
+UserRepository  (kelas: + GetByEmailAsync, GetByResetTokenHashAsync, EmailExistsAsync)
+     │  juga menepati
+IUserRepository : IRepository<User>   (interface: kontrak CRUD + 3 method khusus user)
+```
+
+### 17.2 Kenapa memakai interface
+
+1. **Bisa diganti tanpa mengubah pemakainya.** `AuthService` hanya tahu `IEmailSender`. Di Development yang masuk `FakeEmailSender`, di production `SmtpEmailSender`; `AuthService` tidak diubah sama sekali.
+2. **Bisa diuji.** Di unit test, `IUserRepository` dan `IEmailSender` diganti objek tiruan (NSubstitute) sehingga tidak perlu database/SMTP asli.
+3. **Menjaga lapisan.** Controller hanya melihat `IAuthService`, tidak tahu ada repository atau EF di bawahnya.
+
+### 17.3 Dependency Injection — idenya
+
+Tanpa DI, sebuah kelas membuat sendiri apa yang dibutuhkannya:
+
+```csharp
+public class AccountController : Controller
+{
+    private readonly AuthService _authService = new AuthService(/* ...harus bikin repo, hasher, email sender, ... */);
+}
+```
+
+Masalahnya: kelas jadi terikat ke implementasi tertentu, susah diuji, dan harus tahu cara membuat semua dependensi bawahannya.
+
+Dengan DI, kelas hanya **meminta** lewat constructor; pihak lain (DI container) yang membuatkan dan menyuntikkannya:
+
+```csharp
+public class AccountController(IAuthService authService) : Controller   // "saya butuh IAuthService"
+{
+    // authService sudah terisi saat AccountController dibuat
+}
+```
+
+**Empat langkah supaya DI bekerja** (contoh email sender):
+
+1. **Buat kontrak** — `Services/Interfaces/IEmailSender.cs` → `interface IEmailSender`
+2. **Buat isi dengan `:`** — `Services/Implementations/SmtpEmailSender.cs` → `class SmtpEmailSender : IEmailSender`
+3. **Daftarkan di `Program.cs`** — `builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();` ("kalau ada yang minta `IEmailSender`, berikan `SmtpEmailSender`")
+4. **Minta lewat constructor** — `AuthService(..., IEmailSender emailSender, ...)`
+
+Kalau langkah 3 terlewat, aplikasi melempar error saat request pertama:
+`Unable to resolve service for type '...IEmailSender' while attempting to activate '...AuthService'`.
+
+### 17.4 Dua gaya constructor (keduanya sama)
+
+Project ini memakai **primary constructor** (C# 12): parameter ditulis langsung di deklarasi kelas.
+
+```csharp
+// Gaya yang dipakai di project ini (primary constructor)
+public class AccountController(IAuthService authService) : Controller
+{
+    public Task X() => authService.LoginAsync(...);
+}
+
+// Gaya klasik yang artinya sama persis
+public class AccountController : Controller
+{
+    private readonly IAuthService _authService;
+
+    public AccountController(IAuthService authService)
+    {
+        _authService = authService;
+    }
+}
+```
+
+Pada primary constructor, parameter (`authService`) bisa dipakai di seluruh isi kelas tanpa field `_authService` manual.
+Untuk pewarisan, argumen constructor induk ditulis setelah nama induk:
+`: Repository<User>(context)` dan `: DbContext(options)`.
+
+### 17.5 Semua tempat DI dipakai di project ini
+
+| Kelas yang **meminta** | Yang diminta (constructor) | Didaftarkan di `Program.cs` oleh | Lifetime |
+|---|---|---|---|
+| `AccountController` | `IAuthService` | `AddScoped<IAuthService, AuthService>()` | Scoped |
+| `AuthService` | `IUserRepository` | `AddScoped<IUserRepository, UserRepository>()` | Scoped |
+| `AuthService` | `IPasswordHasher<User>` | `AddScoped<IPasswordHasher<User>, PasswordHasher<User>>()` | Scoped |
+| `AuthService` | `IEmailSender` | `AddScoped<IEmailSender, FakeEmailSender / SmtpEmailSender>()` (pilih sesuai environment) | Scoped |
+| `AuthService` | `IHttpContextAccessor` | `AddHttpContextAccessor()` | Singleton |
+| `AuthService` | `ILogger<AuthService>` | otomatis oleh framework (logging bawaan) | Singleton |
+| `UserRepository` | `AppDbContext` → diteruskan ke `Repository<User>` | `AddDbContext<AppDbContext>(...)` | Scoped |
+| `Repository<T>` | `AppDbContext` | `AddDbContext<AppDbContext>(...)` | Scoped |
+| `AppDbContext` | `DbContextOptions<AppDbContext>` → diteruskan ke `DbContext` | dibuat oleh `AddDbContext` dari connection string | — |
+| `SmtpEmailSender` | `IOptions<SmtpSettings>` | `Configure<SmtpSettings>(GetSection("Smtp"))` | Singleton |
+| `FakeEmailSender` | `ILogger<FakeEmailSender>` | otomatis oleh framework | Singleton |
+
+**Kelas `static` tidak bisa menerima constructor injection**, jadi yang butuh service mengambilnya dengan cara lain (dikenal sebagai *service locator*):
+
+| Kelas | Cara mengambil service |
+|---|---|
+| `SecurityStampCookieValidator` | `context.HttpContext.RequestServices.GetRequiredService<IUserRepository>()` — memakai scope request yang sedang berjalan |
+| `DbSeeder` | `services.CreateScope()` lalu `GetRequiredService<AppDbContext>()`, `IPasswordHasher<User>`, `IConfiguration`, `ILoggerFactory`. Scope dibuat sendiri karena seeding jalan di luar request, dan `AppDbContext` bersifat Scoped. |
+| `UserMappings` | tidak butuh service (fungsi murni) |
+
+**Di unit test**, DI dilakukan manual: `new AuthService(usersMock, hasher, emailMock, accessorMock, logger)`. Inilah keuntungan constructor injection:
+mengganti dependensi dengan objek tiruan cukup lewat parameter.
+
+### 17.6 Yang terjadi saat request datang (rantai penyelesaian DI)
+
+Request `POST /Account/Login`:
+
+```text
+Router memilih AccountController.Login
+   │
+   ▼  DI container membuat AccountController (satu instance per request)
+ butuh IAuthService          → buat AuthService
+   │   butuh IUserRepository → buat UserRepository
+   │   │   butuh AppDbContext (Scoped) → buat/ambil AppDbContext untuk request ini
+   │   butuh IPasswordHasher<User>  → buat PasswordHasher<User>
+   │   butuh IEmailSender           → buat FakeEmailSender (Dev) / SmtpEmailSender
+   │   butuh IHttpContextAccessor   → ambil singleton
+   │   butuh ILogger<AuthService>   → ambil dari logging
+   ▼
+ action dipanggil → ... → request selesai → semua objek Scoped dibuang (AppDbContext ditutup)
+```
+
+Karena `AppDbContext` Scoped, **satu request memakai satu `AppDbContext` yang sama** di semua repository dan service yang terlibat —
+perubahan data konsisten dan koneksi tidak bocor.
+
+### 17.7 Kesalahan DI yang umum
+
+| Gejala | Penyebab | Perbaikan |
+|---|---|---|
+| `Unable to resolve service for type 'X'` | `X` belum didaftarkan di `Program.cs` | Tambahkan `builder.Services.AddScoped<IX, X>()` |
+| `Cannot consume scoped service 'Y' from singleton 'Z'` | Singleton meminta service Scoped | Ubah lifetime `Z` jadi Scoped, atau buat scope sendiri (`CreateScope()`) seperti `DbSeeder` |
+| `A circular dependency was detected` | A butuh B dan B butuh A | Pecah tanggung jawab / pindahkan logika bersama ke kelas ketiga |
+| Perubahan lifetime tidak berefek | Aplikasi belum dijalankan ulang | Stop dan jalankan ulang |
