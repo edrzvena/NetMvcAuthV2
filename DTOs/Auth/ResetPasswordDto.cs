@@ -18,7 +18,7 @@ public class ResetPasswordDto
 
     [Required(ErrorMessage = "Ulangi password baru wajib diisi.")]
     [DataType(DataType.Password)]
-    [Compare(nameof(NewPassword), ErrorMessage = "Password gak sama.")]
+    [Compare(nameof(NewPassword), ErrorMessage = "Password tidak sama.")]
     [Display(Name = "Ulangi Password Baru")]
     public string ConfirmPassword { get; set; } = string.Empty;
 }

@@ -138,10 +138,10 @@ public class AuthService(
 
         var link = $"{resetLinkBase}?token={WebUtility.UrlEncode(token)}";
         var body = $"""
-            <p>Halo {WebUtility.HtmlEncode(user.FullName)},</p>
-            <p>Klik link ini buat bikin password baru (berlaku 1 jam):</p>
+            <p>Yth. {WebUtility.HtmlEncode(user.FullName)},</p>
+            <p>Klik tautan berikut untuk membuat password baru (berlaku 1 jam):</p>
             <p><a href="{link}">{link}</a></p>
-            <p>Kalau lo gak minta reset password, abaikan aja email ini.</p>
+            <p>Jika Anda tidak meminta reset password, abaikan email ini.</p>
             """;
 
         try

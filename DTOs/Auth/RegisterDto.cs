@@ -6,7 +6,7 @@ namespace NetMvcAuthV2.DTOs.Auth;
 public class RegisterDto
 {
     [Required(ErrorMessage = "Email wajib diisi.")]
-    [EmailAddress(ErrorMessage = "Format email gak valid.")]
+    [EmailAddress(ErrorMessage = "Format email tidak valid.")]
     [MaxLength(256, ErrorMessage = "Email maksimal 256 karakter.")]
     public string Email { get; set; } = string.Empty;
 
@@ -24,7 +24,7 @@ public class RegisterDto
 
     [Required(ErrorMessage = "Ulangi password wajib diisi.")]
     [DataType(DataType.Password)]
-    [Compare(nameof(Password), ErrorMessage = "Password gak sama.")]
+    [Compare(nameof(Password), ErrorMessage = "Password tidak sama.")]
     [Display(Name = "Ulangi Password")]
     public string ConfirmPassword { get; set; } = string.Empty;
 }

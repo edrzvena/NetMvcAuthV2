@@ -5,7 +5,7 @@ namespace NetMvcAuthV2.DTOs.Auth;
 public class LoginDto
 {
     [Required(ErrorMessage = "Email wajib diisi.")]
-    [EmailAddress(ErrorMessage = "Format email gak valid.")]
+    [EmailAddress(ErrorMessage = "Format email tidak valid.")]
     public string Email { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Password wajib diisi.")]
