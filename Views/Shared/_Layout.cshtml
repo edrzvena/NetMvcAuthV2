@@ -1,4 +1,15 @@
-﻿<!DOCTYPE html>
+﻿@{
+    var controller = ViewContext.RouteData.Values["controller"]?.ToString();
+    var isAuthenticated = User.Identity?.IsAuthenticated == true;
+    var isAdmin = User.IsInRole(NetMvcAuthV2.Constants.Roles.Admin);
+    var fullName = User.Identity?.Name ?? string.Empty;
+    var email = User.FindFirstValue(ClaimTypes.Email) ?? string.Empty;
+    var initial = fullName.Length > 0 ? fullName[..1].ToUpperInvariant() : "?";
+
+    string NavClass(string name) => controller == name ? "nav-link active" : "nav-link";
+    string? Current(string name) => controller == name ? "page" : null;
+}
+<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="utf-8" />
@@ -9,62 +20,78 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/NetMvcAuthV2.styles.css" asp-append-version="true" />
 </head>
-<body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">NetMvcAuthV2</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
+<body class="d-flex flex-column min-vh-100 bg-light">
+    <header class="sticky-top">
+        <nav class="navbar navbar-expand-md bg-white border-bottom" aria-label="Navigasi utama">
+            <div class="container">
+                <a class="navbar-brand fw-bold app-brand" asp-controller="Home" asp-action="Index">NetMvcAuthV2</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
+                        aria-controls="mainNav" aria-expanded="false" aria-label="Buka menu navigasi">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
+
+                <div class="collapse navbar-collapse" id="mainNav">
+                    <ul class="navbar-nav app-nav me-auto gap-md-1 mt-3 mt-md-0">
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                            <a class="@NavClass("Home")" aria-current="@Current("Home")" asp-controller="Home" asp-action="Index">Beranda</a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                    </ul>
-                    <ul class="navbar-nav align-items-sm-center">
-                        @if (User.Identity?.IsAuthenticated == true)
+                        @if (isAdmin)
                         {
                             <li class="nav-item">
-                                <span class="navbar-text text-dark me-sm-3">Selamat datang, @User.Identity.Name</span>
+                                <a class="@NavClass("Admin")" aria-current="@Current("Admin")" asp-controller="Admin" asp-action="Index">Panel Admin</a>
                             </li>
-                            <li class="nav-item">
-                                <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
-                                    <button type="submit" class="btn btn-outline-secondary btn-sm">Keluar</button>
-                                </form>
-                            </li>
+                        }
+                    </ul>
+
+                    <div class="d-flex align-items-md-center gap-2 py-3 py-md-0">
+                        @if (isAuthenticated)
+                        {
+                            <div class="dropdown">
+                                <button class="btn btn-light d-flex align-items-center gap-2 dropdown-toggle" type="button"
+                                        data-bs-toggle="dropdown" aria-expanded="false" aria-label="Menu akun @fullName">
+                                    <span class="app-avatar" aria-hidden="true">@initial</span>
+                                    <span>@fullName</span>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                                    <li class="px-3 py-2">
+                                        <div class="fw-semibold">@fullName</div>
+                                        <div class="small text-muted">@email</div>
+                                        <span class="badge text-bg-primary mt-1">@(isAdmin ? "Administrator" : "Pengguna")</span>
+                                    </li>
+                                    <li><hr class="dropdown-divider" /></li>
+                                    <li>
+                                        <form asp-controller="Account" asp-action="Logout" method="post">
+                                            <button type="submit" class="dropdown-item">Keluar</button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </div>
                         }
                         else
                         {
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-controller="Account" asp-action="Login">Masuk</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="btn btn-primary btn-sm" asp-controller="Account" asp-action="Register">Daftar</a>
-                            </li>
+                            <a class="btn btn-outline-primary" asp-controller="Account" asp-action="Login">Masuk</a>
+                            <a class="btn btn-primary" asp-controller="Account" asp-action="Register">Daftar</a>
                         }
-                    </ul>
+                    </div>
                 </div>
             </div>
         </nav>
     </header>
-    <div class="container">
-        <main role="main" class="pb-3">
+
+    <div class="container flex-grow-1 py-4">
+        <main role="main">
             <partial name="_FlashMessages" />
             @RenderBody()
         </main>
     </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - NetMvcAuthV2 - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+    <footer class="border-top bg-white text-muted py-3">
+        <div class="container d-flex flex-wrap justify-content-between gap-2 small">
+            <span>&copy; 2026 NetMvcAuthV2</span>
+            <a asp-controller="Home" asp-action="Privacy">Kebijakan Privasi</a>
         </div>
     </footer>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>

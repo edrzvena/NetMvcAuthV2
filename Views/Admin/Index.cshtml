@@ -1,0 +1,34 @@
+@{
+    ViewData["Title"] = "Panel Admin";
+    var fullName = User.Identity?.Name ?? string.Empty;
+}
+
+<div class="mb-4">
+    <h1 class="h3 mb-1">Panel Admin</h1>
+    <p class="text-muted mb-0">Halaman ini hanya dapat diakses oleh Administrator.</p>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-6">
+        <section class="card app-card h-100" aria-labelledby="admin-session-title">
+            <div class="card-body">
+                <h2 id="admin-session-title" class="h5">Sesi Anda</h2>
+                <dl class="app-definition mt-3 mb-0">
+                    <dt>Masuk sebagai</dt>
+                    <dd>@fullName</dd>
+                    <dt>Peran</dt>
+                    <dd><span class="badge text-bg-primary">Administrator</span></dd>
+                </dl>
+            </div>
+        </section>
+    </div>
+
+    <div class="col-md-6">
+        <section class="card app-card h-100" aria-labelledby="admin-next-title">
+            <div class="card-body">
+                <h2 id="admin-next-title" class="h5">Pengelolaan Pengguna</h2>
+                <p class="text-muted mb-0">Fitur pengelolaan pengguna dan perubahan peran belum tersedia pada versi ini.</p>
+            </div>
+        </section>
+    </div>
+</div>

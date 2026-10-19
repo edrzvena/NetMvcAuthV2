@@ -1,8 +1,113 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    var isAuthenticated = User.Identity?.IsAuthenticated == true;
+    ViewData["Title"] = isAuthenticated ? "Beranda" : "Selamat Datang";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+@if (isAuthenticated)
+{
+    var isAdmin = User.IsInRole(NetMvcAuthV2.Constants.Roles.Admin);
+    var fullName = User.Identity!.Name ?? string.Empty;
+    var email = User.FindFirstValue(ClaimTypes.Email) ?? string.Empty;
+    var roleLabel = isAdmin ? "Administrator" : "Pengguna";
+    var initial = fullName.Length > 0 ? fullName[..1].ToUpperInvariant() : "?";
+
+    <section class="app-banner d-flex flex-wrap align-items-center gap-3 mb-4" aria-labelledby="welcome-title">
+        <span class="app-avatar app-avatar-lg bg-white text-primary" aria-hidden="true">@initial</span>
+        <div>
+            <h1 id="welcome-title" class="h3 mb-1">Selamat datang, @fullName</h1>
+            <p class="mb-0 opacity-75">Anda masuk sebagai <strong>@roleLabel</strong>.</p>
+        </div>
+    </section>
+
+    <div class="row g-4">
+        <div class="col-md-6 col-lg-4">
+            <section class="card app-card h-100" aria-labelledby="account-title">
+                <div class="card-body">
+                    <span class="app-icon mb-3" aria-hidden="true">&#128100;</span>
+                    <h2 id="account-title" class="h5">Informasi Akun</h2>
+                    <dl class="app-definition mt-3 mb-0">
+                        <dt>Nama lengkap</dt>
+                        <dd>@fullName</dd>
+                        <dt>Email</dt>
+                        <dd>@email</dd>
+                        <dt>Peran</dt>
+                        <dd><span class="badge text-bg-primary">@roleLabel</span></dd>
+                    </dl>
+                </div>
+            </section>
+        </div>
+
+        <div class="col-md-6 col-lg-4">
+            <section class="card app-card h-100" aria-labelledby="security-title">
+                <div class="card-body">
+                    <span class="app-icon mb-3" aria-hidden="true">&#128274;</span>
+                    <h2 id="security-title" class="h5">Keamanan Akun</h2>
+                    <ul class="mt-3 mb-0 ps-3">
+                        <li class="mb-2">Password Anda disimpan dalam bentuk hash, bukan teks asli.</li>
+                        <li class="mb-2">Akun dikunci sementara setelah beberapa kali gagal masuk.</li>
+                        <li>Mengubah password lewat fitur lupa password akan mengeluarkan sesi di perangkat lain.</li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+
+        <div class="col-md-12 col-lg-4">
+            <section class="card app-card h-100" aria-labelledby="access-title">
+                <div class="card-body d-flex flex-column">
+                    <span class="app-icon mb-3" aria-hidden="true">&#128273;</span>
+                    <h2 id="access-title" class="h5">Hak Akses</h2>
+                    @if (isAdmin)
+                    {
+                        <p class="text-muted mt-2">Sebagai Administrator, Anda dapat membuka Panel Admin.</p>
+                        <a class="btn btn-primary mt-auto align-self-start" asp-controller="Admin" asp-action="Index">Buka Panel Admin</a>
+                    }
+                    else
+                    {
+                        <p class="text-muted mt-2 mb-0">Akun Anda memiliki akses sebagai Pengguna. Halaman khusus Administrator tidak tersedia untuk peran ini.</p>
+                    }
+                </div>
+            </section>
+        </div>
+    </div>
+}
+else
+{
+    <section class="app-hero text-center mb-5" aria-labelledby="hero-title">
+        <h1 id="hero-title" class="display-5 fw-bold mb-3">Kelola akses akun dengan aman</h1>
+        <p class="lead mb-4">Daftar, masuk, dan pulihkan akun Anda kapan saja dengan perlindungan yang menjaga data Anda tetap aman.</p>
+        <div class="d-flex flex-wrap justify-content-center gap-2">
+            <a class="btn btn-light btn-lg" asp-controller="Account" asp-action="Register">Daftar Sekarang</a>
+            <a class="btn btn-outline-light btn-lg" asp-controller="Account" asp-action="Login">Masuk</a>
+        </div>
+    </section>
+
+    <div class="row g-4">
+        <div class="col-md-4">
+            <section class="card app-card h-100">
+                <div class="card-body">
+                    <span class="app-icon mb-3" aria-hidden="true">&#9998;</span>
+                    <h2 class="h5">Pendaftaran Mudah</h2>
+                    <p class="text-muted mb-0">Buat akun hanya dengan email dan password. Prosesnya singkat dan data Anda tervalidasi.</p>
+                </div>
+            </section>
+        </div>
+        <div class="col-md-4">
+            <section class="card app-card h-100">
+                <div class="card-body">
+                    <span class="app-icon mb-3" aria-hidden="true">&#128274;</span>
+                    <h2 class="h5">Perlindungan Berlapis</h2>
+                    <p class="text-muted mb-0">Password di-hash, akun dikunci sementara saat terjadi percobaan masuk berulang, dan sesi dilindungi.</p>
+                </div>
+            </section>
+        </div>
+        <div class="col-md-4">
+            <section class="card app-card h-100">
+                <div class="card-body">
+                    <span class="app-icon mb-3" aria-hidden="true">&#9993;</span>
+                    <h2 class="h5">Pemulihan Password</h2>
+                    <p class="text-muted mb-0">Lupa password? Minta tautan reset melalui email dan buat password baru dengan mudah.</p>
+                </div>
+            </section>
+        </div>
+    </div>
+}
