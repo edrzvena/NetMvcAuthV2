@@ -1,7 +1,12 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using NetMvcAuthV2.Common.Settings;
 using NetMvcAuthV2.Data;
+using NetMvcAuthV2.Models;
 using NetMvcAuthV2.Repositories.Implementations;
 using NetMvcAuthV2.Repositories.Interfaces;
+using NetMvcAuthV2.Services.Implementations;
+using NetMvcAuthV2.Services.Interfaces;
 
 var builder =WebApplication.CreateBuilder(args);
 
@@ -13,6 +18,15 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("Smtp"));
+if (builder.Environment.IsDevelopment())
+    builder.Services.AddScoped<IEmailSender, FakeEmailSender>();
+else
+    builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
 
 var app = builder.Build();
 
