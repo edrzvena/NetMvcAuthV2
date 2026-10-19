@@ -1,0 +1,53 @@
+@model NetMvcAuthV2.DTOs.Auth.RegisterDto
+@{
+    ViewData["Title"] = "Daftar";
+    Layout = "_AuthLayout";
+}
+
+<h1 class="h3 mb-1">Bikin akun baru</h1>
+<p class="text-muted mb-4">Isi data di bawah, gak sampai semenit kok.</p>
+
+<form asp-action="Register" method="post" data-auth-form novalidate>
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+    <div class="mb-3">
+        <label asp-for="Email" class="form-label"></label>
+        <input asp-for="Email" class="form-control" type="email" autocomplete="email" autofocus />
+        <span asp-validation-for="Email" class="text-danger small"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="FullName" class="form-label"></label>
+        <input asp-for="FullName" class="form-control" autocomplete="name" />
+        <span asp-validation-for="FullName" class="text-danger small"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Password" class="form-label"></label>
+        <div class="input-group">
+            <input asp-for="Password" class="form-control" autocomplete="new-password" aria-describedby="Password-hint" />
+            <button type="button" class="btn btn-outline-secondary" data-toggle-password="Password"
+                    aria-label="Tampilkan password" aria-pressed="false">Tampilkan</button>
+        </div>
+        <div id="Password-hint" class="form-text">Minimal 8 karakter, kombinasi huruf &amp; angka.</div>
+        <span asp-validation-for="Password" class="text-danger small"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="ConfirmPassword" class="form-label"></label>
+        <div class="input-group">
+            <input asp-for="ConfirmPassword" class="form-control" autocomplete="new-password" />
+            <button type="button" class="btn btn-outline-secondary" data-toggle-password="ConfirmPassword"
+                    aria-label="Tampilkan password" aria-pressed="false">Tampilkan</button>
+        </div>
+        <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary w-100">Daftar</button>
+</form>
+
+<p class="mt-4 mb-0 text-center">Sudah punya akun? <a asp-action="Login">Masuk</a></p>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - NetMvcAuthV2</title>
+    <script type="importmap"></script>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/NetMvcAuthV2.styles.css" asp-append-version="true" />
+</head>
+<body class="auth-body">
+    <div class="auth-shell">
+        <aside class="auth-brand d-none d-md-flex">
+            <div>
+                <a class="auth-brand-name" asp-controller="Home" asp-action="Index">NetMvcAuthV2</a>
+                <p class="auth-brand-tagline">Masuk dulu, biar semuanya aman dan tetap jadi punya lo.</p>
+            </div>
+        </aside>
+
+        <main class="auth-main" role="main">
+            <div class="auth-card">
+                <a class="d-md-none auth-brand-mobile" asp-controller="Home" asp-action="Index">NetMvcAuthV2</a>
+                <partial name="_FlashMessages" />
+                @RenderBody()
+            </div>
+        </main>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+    <script src="~/js/auth.js" asp-append-version="true"></script>
+</body>
+</html>

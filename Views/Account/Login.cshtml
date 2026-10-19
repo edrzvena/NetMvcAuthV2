@@ -1,0 +1,44 @@
+@model NetMvcAuthV2.DTOs.Auth.LoginDto
+@{
+    ViewData["Title"] = "Masuk";
+    Layout = "_AuthLayout";
+}
+
+<h1 class="h3 mb-1">Masuk</h1>
+<p class="text-muted mb-4">Selamat datang balik!</p>
+
+<form asp-action="Login" asp-route-returnUrl="@ViewData["ReturnUrl"]" method="post" data-auth-form novalidate>
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+    <div class="mb-3">
+        <label asp-for="Email" class="form-label"></label>
+        <input asp-for="Email" class="form-control" type="email" autocomplete="email" autofocus />
+        <span asp-validation-for="Email" class="text-danger small"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Password" class="form-label"></label>
+        <div class="input-group">
+            <input asp-for="Password" class="form-control" autocomplete="current-password" />
+            <button type="button" class="btn btn-outline-secondary" data-toggle-password="Password"
+                    aria-label="Tampilkan password" aria-pressed="false">Tampilkan</button>
+        </div>
+        <span asp-validation-for="Password" class="text-danger small"></span>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="form-check">
+            <input asp-for="RememberMe" class="form-check-input" />
+            <label asp-for="RememberMe" class="form-check-label"></label>
+        </div>
+        <a asp-action="ForgotPassword">Lupa password?</a>
+    </div>
+
+    <button type="submit" class="btn btn-primary w-100">Masuk</button>
+</form>
+
+<p class="mt-4 mb-0 text-center">Belum punya akun? <a asp-action="Register">Daftar</a></p>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

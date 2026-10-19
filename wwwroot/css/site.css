@@ -21,6 +21,16 @@ body {
   margin-bottom: 60px;
 }
 
+/* Ringkasan error kosong dari asp-validation-summary jangan tampil sebagai kotak merah */
+.validation-summary-valid {
+  display: none;
+}
+
+.validation-summary-errors ul {
+  margin-bottom: 0;
+  padding-left: 1.25rem;
+}
+
 .form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
   color: var(--bs-secondary-color);
   text-align: end;
