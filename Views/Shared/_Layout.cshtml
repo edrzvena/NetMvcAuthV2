@@ -15,6 +15,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - NetMvcAuthV2</title>
+    <link rel="icon" type="image/svg+xml" href="~/img/logo.svg" />
     <script type="importmap"></script>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
@@ -24,7 +25,10 @@
     <header class="sticky-top">
         <nav class="navbar navbar-expand-md bg-white border-bottom" aria-label="Navigasi utama">
             <div class="container">
-                <a class="navbar-brand fw-bold app-brand" asp-controller="Home" asp-action="Index">NetMvcAuthV2</a>
+                <a class="navbar-brand fw-bold app-brand d-flex align-items-center gap-2" asp-controller="Home" asp-action="Index">
+                    <img src="~/img/logo.svg" alt="" width="32" height="32" />
+                    <span>NetMvcAuthV2</span>
+                </a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
                         aria-controls="mainNav" aria-expanded="false" aria-label="Buka menu navigasi">
                     <span class="navbar-toggler-icon"></span>

@@ -4,6 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - NetMvcAuthV2</title>
+    <link rel="icon" type="image/svg+xml" href="~/img/logo.svg" />
     <script type="importmap"></script>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
@@ -13,14 +14,20 @@
     <div class="auth-shell">
         <aside class="auth-brand d-none d-md-flex">
             <div>
-                <a class="auth-brand-name" asp-controller="Home" asp-action="Index">NetMvcAuthV2</a>
+                <div class="auth-brand-lockup">
+                    <img src="~/img/logo-light.svg" alt="" width="64" height="64" />
+                    <span class="auth-brand-name">NetMvcAuthV2</span>
+                </div>
                 <p class="auth-brand-tagline">Masuk untuk mengakses akun Anda dengan aman.</p>
             </div>
         </aside>
 
         <main class="auth-main" role="main">
             <div class="auth-card">
-                <a class="d-md-none auth-brand-mobile" asp-controller="Home" asp-action="Index">NetMvcAuthV2</a>
+                <div class="d-md-none auth-brand-mobile">
+                    <img src="~/img/logo.svg" alt="" width="36" height="36" />
+                    <span>NetMvcAuthV2</span>
+                </div>
                 <partial name="_FlashMessages" />
                 @RenderBody()
             </div>

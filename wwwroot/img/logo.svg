@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Logo">
+  <defs>
+    <linearGradient id="shield" x1="12" y1="4" x2="52" y2="60" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2f6fe4"/>
+      <stop offset="1" stop-color="#0b3d91"/>
+    </linearGradient>
+  </defs>
+  <path d="M32 4 56 13v17c0 15-10 25-24 30C18 55 8 45 8 30V13L32 4Z" fill="url(#shield)"/>
+  <circle cx="32" cy="27" r="7" fill="#fff"/>
+  <path d="M29.2 32h5.6l1.7 13h-9L29.2 32Z" fill="#fff"/>
+</svg>

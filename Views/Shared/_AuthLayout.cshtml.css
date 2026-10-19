@@ -12,18 +12,17 @@
   background: linear-gradient(135deg, #0b3d91 0%, #1a237e 100%);
 }
 
+.auth-brand-lockup {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
 .auth-brand-name {
-  display: inline-block;
-  margin-bottom: 1rem;
   font-size: 2rem;
   font-weight: 700;
   color: #fff;
-  text-decoration: none;
-}
-
-.auth-brand-name:focus-visible {
-  outline: 3px solid #fff;
-  outline-offset: 4px;
 }
 
 .auth-brand-tagline {
@@ -46,10 +45,11 @@
 }
 
 .auth-brand-mobile {
-  display: inline-block;
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
   margin-bottom: 1.5rem;
   font-size: 1.25rem;
   font-weight: 700;
   color: #0b3d91;
-  text-decoration: none;
 }
