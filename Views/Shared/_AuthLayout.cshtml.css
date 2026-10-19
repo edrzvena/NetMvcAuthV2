@@ -13,10 +13,17 @@
 }
 
 .auth-brand-lockup {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 1rem;
   margin-bottom: 1.25rem;
+  text-decoration: none;
+}
+
+.auth-brand-lockup:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 6px;
+  border-radius: 0.5rem;
 }
 
 .auth-brand-name {
@@ -45,11 +52,12 @@
 }
 
 .auth-brand-mobile {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 0.625rem;
   margin-bottom: 1.5rem;
   font-size: 1.25rem;
   font-weight: 700;
   color: #0b3d91;
+  text-decoration: none;
 }
