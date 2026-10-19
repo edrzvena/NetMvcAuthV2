@@ -6,6 +6,7 @@ using NetMvcAuthV2.Common.Security;
 using NetMvcAuthV2.Common.Settings;
 using NetMvcAuthV2.Constants;
 using NetMvcAuthV2.Data;
+using NetMvcAuthV2.Data.Seed;
 using NetMvcAuthV2.Models;
 using NetMvcAuthV2.Repositories.Implementations;
 using NetMvcAuthV2.Repositories.Interfaces;
@@ -69,6 +70,9 @@ builder.Services.AddRateLimiter(o =>
 });
 
 var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
+    await DbSeeder.SeedAdminAsync(app.Services);
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
